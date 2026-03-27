@@ -1,0 +1,3 @@
+run = "node server.js"
+language = "nodejs"
+entrypoint = "server.js"
