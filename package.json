@@ -1,0 +1,12 @@
+{
+  "name": "geocache-api",
+  "version": "0.1.0",
+  "description": "Cache-first geocoding proxy API — pay only for new lookups",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
