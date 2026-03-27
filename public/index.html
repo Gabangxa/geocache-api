@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GeoCache API — Pay Only for New Lookups</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --border: #2a2d3e;
+      --accent: #4f8ef7;
+      --accent2: #7c3aed;
+      --green: #22c55e;
+      --orange: #f97316;
+      --red: #ef4444;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --radius: 10px;
+    }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* NAV */
+    nav { display: flex; justify-content: space-between; align-items: center; padding: 1rem 2rem; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--bg); z-index: 100; }
+    .logo { font-size: 1.25rem; font-weight: 700; background: linear-gradient(90deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .nav-links { display: flex; gap: 1.5rem; align-items: center; }
+    .nav-links a { color: var(--muted); font-size: 0.9rem; }
+    .btn { padding: 0.5rem 1.25rem; border-radius: 6px; font-size: 0.9rem; cursor: pointer; border: none; font-weight: 600; transition: opacity 0.15s; }
+    .btn:hover { opacity: 0.85; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+
+    /* HERO */
+    .hero { max-width: 860px; margin: 0 auto; padding: 5rem 2rem 3rem; text-align: center; }
+    .hero h1 { font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 800; line-height: 1.15; margin-bottom: 1.25rem; }
+    .hero h1 span { background: linear-gradient(90deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .hero p { font-size: 1.15rem; color: var(--muted); max-width: 620px; margin: 0 auto 2rem; }
+    .hero-ctas { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+    .badge { display: inline-flex; align-items: center; gap: 0.4rem; background: #1e2a1e; border: 1px solid #2d4a2d; color: var(--green); padding: 0.3rem 0.75rem; border-radius: 999px; font-size: 0.8rem; font-weight: 600; margin-bottom: 1.5rem; }
+
+    /* STATS */
+    .stats { display: flex; justify-content: center; gap: 3rem; flex-wrap: wrap; padding: 2rem; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); margin: 2rem 0; }
+    .stat { text-align: center; }
+    .stat-num { font-size: 2rem; font-weight: 800; color: var(--accent); }
+    .stat-label { font-size: 0.85rem; color: var(--muted); }
+
+    /* SECTION */
+    section { max-width: 960px; margin: 0 auto; padding: 3rem 2rem; }
+    section h2 { font-size: 1.75rem; font-weight: 700; margin-bottom: 0.5rem; }
+    section .sub { color: var(--muted); margin-bottom: 2rem; }
+
+    /* PLAYGROUND */
+    .playground { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem; }
+    .tabs { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
+    .tab { padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-size: 0.9rem; border: 1px solid var(--border); background: transparent; color: var(--muted); transition: all 0.15s; }
+    .tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .form-group { margin-bottom: 1rem; }
+    .form-group label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 0.4rem; font-weight: 600; }
+    .form-group input { width: 100%; padding: 0.65rem 0.9rem; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 0.95rem; }
+    .form-group input:focus { outline: none; border-color: var(--accent); }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .response-box { margin-top: 1.5rem; }
+    .response-box .label-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+    .response-box .label-row span { font-size: 0.8rem; color: var(--muted); }
+    .cache-badge { padding: 0.2rem 0.6rem; border-radius: 999px; font-size: 0.75rem; font-weight: 700; }
+    .cache-hit { background: #14532d; color: var(--green); }
+    .cache-miss { background: #431407; color: var(--orange); }
+    pre { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; font-size: 0.85rem; overflow-x: auto; white-space: pre-wrap; word-break: break-all; min-height: 80px; color: var(--text); }
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    /* HOW IT WORKS */
+    .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-top: 1.5rem; }
+    .step { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; }
+    .step-num { font-size: 1.5rem; font-weight: 800; color: var(--accent); margin-bottom: 0.5rem; }
+    .step h3 { font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem; }
+    .step p { font-size: 0.875rem; color: var(--muted); }
+
+    /* PRICING */
+    .pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.25rem; margin-top: 1.5rem; }
+    .plan { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.75rem; position: relative; }
+    .plan.popular { border-color: var(--accent); }
+    .popular-badge { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: var(--accent); color: #fff; padding: 0.2rem 0.75rem; border-radius: 999px; font-size: 0.75rem; font-weight: 700; white-space: nowrap; }
+    .plan-name { font-weight: 700; font-size: 1rem; margin-bottom: 0.25rem; }
+    .plan-price { font-size: 2rem; font-weight: 800; margin-bottom: 0.25rem; }
+    .plan-price span { font-size: 1rem; font-weight: 400; color: var(--muted); }
+    .plan-credits { color: var(--muted); font-size: 0.85rem; margin-bottom: 1rem; }
+    .plan-features { list-style: none; }
+    .plan-features li { font-size: 0.875rem; color: var(--muted); padding: 0.25rem 0; }
+    .plan-features li::before { content: "✓ "; color: var(--green); font-weight: 700; }
+
+    /* FOOTER */
+    footer { text-align: center; padding: 2rem; color: var(--muted); font-size: 0.85rem; border-top: 1px solid var(--border); margin-top: 3rem; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">GeoCache API</div>
+  <div class="nav-links">
+    <a href="#how-it-works">How it works</a>
+    <a href="#pricing">Pricing</a>
+    <a href="/docs">Docs</a>
+    <a href="/openapi.json">OpenAPI</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="badge">
+    <span style="width:8px;height:8px;background:var(--green);border-radius:50%;display:inline-block;"></span>
+    Live API — Try it now
+  </div>
+  <h1>Geocoding that <span>charges you less</span> the more you use it</h1>
+  <p>GeoCache API is a cache-first geocoding proxy. Only new addresses consume credits. Repeat lookups are free, instant, and served from cache.</p>
+  <div class="hero-ctas">
+    <a href="#playground" class="btn btn-primary">Try the API</a>
+    <a href="/docs" class="btn btn-outline">Read the docs</a>
+  </div>
+</div>
+
+<div class="stats">
+  <div class="stat">
+    <div class="stat-num">$0.005</div>
+    <div class="stat-label">per new lookup</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num">$0.00</div>
+    <div class="stat-label">per cached lookup</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num">24hr</div>
+    <div class="stat-label">default cache TTL</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num">&lt;5ms</div>
+    <div class="stat-label">cache response time</div>
+  </div>
+</div>
+
+<section id="playground">
+  <h2>Try it live</h2>
+  <p class="sub">Make real API calls below. Use demo key <code style="background:var(--surface);padding:2px 6px;border-radius:4px;font-size:0.85em;">gca_demo_key</code>. Submit the same address twice to see a cache hit.</p>
+
+  <div class="playground">
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('geocode')">Forward Geocode</button>
+      <button class="tab" onclick="switchTab('reverse')">Reverse Geocode</button>
+    </div>
+
+    <!-- Forward Geocode Panel -->
+    <div id="panel-geocode" class="panel active">
+      <div class="form-group">
+        <label>Address</label>
+        <input type="text" id="geo-address" value="Eiffel Tower, Paris, France" placeholder="Enter an address..." />
+      </div>
+      <button class="btn btn-primary" onclick="doGeocode()">Geocode →</button>
+      <div class="response-box" id="geo-response-box" style="display:none;">
+        <div class="label-row">
+          <span>Response</span>
+          <span id="geo-cache-badge"></span>
+        </div>
+        <pre id="geo-response"></pre>
+      </div>
+    </div>
+
+    <!-- Reverse Geocode Panel -->
+    <div id="panel-reverse" class="panel">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Latitude</label>
+          <input type="number" id="rev-lat" value="48.8584" step="any" placeholder="48.8584" />
+        </div>
+        <div class="form-group">
+          <label>Longitude</label>
+          <input type="number" id="rev-lng" value="2.2945" step="any" placeholder="2.2945" />
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="doReverse()">Reverse Geocode →</button>
+      <div class="response-box" id="rev-response-box" style="display:none;">
+        <div class="label-row">
+          <span>Response</span>
+          <span id="rev-cache-badge"></span>
+        </div>
+        <pre id="rev-response"></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="how-it-works">
+  <h2>How it works</h2>
+  <p class="sub">Three steps. One smart cache layer between you and expensive geocoding APIs.</p>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">01</div>
+      <h3>Send your address</h3>
+      <p>POST to /v1/geocode with your address string. Include your API key in the header.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">02</div>
+      <h3>Cache checked first</h3>
+      <p>GeoCache checks its distributed cache. If the address was seen in the last 24 hours, it returns instantly at zero credit cost.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">03</div>
+      <h3>Only pay for misses</h3>
+      <p>Cache misses hit the upstream geocoding provider and consume one credit. The result is cached for all future callers.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">04</div>
+      <h3>Track your savings</h3>
+      <p>GET /v1/usage shows hit rate, credits used, and estimated USD saved from cache hits.</p>
+    </div>
+  </div>
+</section>
+
+<section id="pricing">
+  <h2>Simple, honest pricing</h2>
+  <p class="sub">Pay for new lookups only. Cache hits are always free.</p>
+  <div class="pricing-grid">
+    <div class="plan">
+      <div class="plan-name">Free</div>
+      <div class="plan-price">$0<span>/mo</span></div>
+      <div class="plan-credits">500 credits / month</div>
+      <ul class="plan-features">
+        <li>Forward &amp; reverse geocoding</li>
+        <li>24hr cache TTL</li>
+        <li>Usage dashboard</li>
+        <li>Community support</li>
+      </ul>
+    </div>
+    <div class="plan popular">
+      <div class="popular-badge">Most popular</div>
+      <div class="plan-name">Developer</div>
+      <div class="plan-price">$19<span>/mo</span></div>
+      <div class="plan-credits">5,000 credits / month</div>
+      <ul class="plan-features">
+        <li>Everything in Free</li>
+        <li>72hr cache TTL</li>
+        <li>Email support</li>
+        <li>OpenAPI spec</li>
+      </ul>
+    </div>
+    <div class="plan">
+      <div class="plan-name">Startup</div>
+      <div class="plan-price">$49<span>/mo</span></div>
+      <div class="plan-credits">25,000 credits / month</div>
+      <ul class="plan-features">
+        <li>Everything in Developer</li>
+        <li>7-day cache TTL</li>
+        <li>Bulk geocode endpoint</li>
+        <li>Priority support</li>
+      </ul>
+    </div>
+    <div class="plan">
+      <div class="plan-name">Scale</div>
+      <div class="plan-price">$99<span>/mo</span></div>
+      <div class="plan-credits">100,000 credits / month</div>
+      <ul class="plan-features">
+        <li>Everything in Startup</li>
+        <li>30-day cache TTL</li>
+        <li>Dedicated cache pool</li>
+        <li>SLA + Slack support</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>GeoCache API &mdash; Cache-first geocoding. <a href="/docs">Docs</a> &middot; <a href="/openapi.json">OpenAPI</a></p>
+  <p style="margin-top:0.5rem;font-size:0.8rem;">Demo keys: <code>gca_demo_key</code> (free) &middot; <code>gca_dev_key</code> (developer)</p>
+</footer>
+
+<script>
+  const API_KEY = 'gca_demo_key';
+
+  function switchTab(tab) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    event.target.classList.add('active');
+    document.getElementById('panel-' + tab).classList.add('active');
+  }
+
+  async function doGeocode() {
+    const address = document.getElementById('geo-address').value.trim();
+    if (!address) return;
+    const btn = event.target;
+    btn.disabled = true;
+    btn.textContent = 'Loading...';
+    try {
+      const res = await fetch('/v1/geocode', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-API-Key': API_KEY },
+        body: JSON.stringify({ address })
+      });
+      const data = await res.json();
+      document.getElementById('geo-response-box').style.display = 'block';
+      document.getElementById('geo-response').textContent = JSON.stringify(data, null, 2);
+      const badge = document.getElementById('geo-cache-badge');
+      if (data.cache === 'hit') {
+        badge.innerHTML = '<span class="cache-badge cache-hit">CACHE HIT</span>';
+      } else if (data.cache === 'miss') {
+        badge.innerHTML = '<span class="cache-badge cache-miss">CACHE MISS</span>';
+      } else {
+        badge.innerHTML = '';
+      }
+    } catch (e) {
+      document.getElementById('geo-response-box').style.display = 'block';
+      document.getElementById('geo-response').textContent = 'Error: ' + e.message;
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Geocode →';
+    }
+  }
+
+  async function doReverse() {
+    const lat = parseFloat(document.getElementById('rev-lat').value);
+    const lng = parseFloat(document.getElementById('rev-lng').value);
+    if (isNaN(lat) || isNaN(lng)) return;
+    const btn = event.target;
+    btn.disabled = true;
+    btn.textContent = 'Loading...';
+    try {
+      const res = await fetch('/v1/reverse', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-API-Key': API_KEY },
+        body: JSON.stringify({ lat, lng })
+      });
+      const data = await res.json();
+      document.getElementById('rev-response-box').style.display = 'block';
+      document.getElementById('rev-response').textContent = JSON.stringify(data, null, 2);
+      const badge = document.getElementById('rev-cache-badge');
+      if (data.cache === 'hit') {
+        badge.innerHTML = '<span class="cache-badge cache-hit">CACHE HIT</span>';
+      } else if (data.cache === 'miss') {
+        badge.innerHTML = '<span class="cache-badge cache-miss">CACHE MISS</span>';
+      } else {
+        badge.innerHTML = '';
+      }
+    } catch (e) {
+      document.getElementById('rev-response-box').style.display = 'block';
+      document.getElementById('rev-response').textContent = 'Error: ' + e.message;
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Reverse Geocode →';
+    }
+  }
+</script>
+</body>
+</html>
