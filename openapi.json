@@ -1,0 +1,127 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "GeoCache API",
+    "description": "Cache-first geocoding proxy — pay only for new lookups",
+    "version": "0.1.0",
+    "contact": { "name": "GeoCache API", "url": "https://geocache-api.replit.app" }
+  },
+  "servers": [{ "url": "https://geocache-api.replit.app", "description": "Production" }, { "url": "http://localhost:3000", "description": "Local" }],
+  "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": { "type": "apiKey", "in": "header", "name": "X-API-Key" }
+    },
+    "schemas": {
+      "GeocodeRequest": {
+        "type": "object",
+        "required": ["address"],
+        "properties": { "address": { "type": "string", "example": "Eiffel Tower, Paris, France" } }
+      },
+      "GeocodeResponse": {
+        "type": "object",
+        "properties": {
+          "lat": { "type": "number" },
+          "lng": { "type": "number" },
+          "formatted": { "type": "string" },
+          "confidence": { "type": "integer" },
+          "cache": { "type": "string", "enum": ["hit", "miss"] },
+          "ttl_seconds": { "type": "integer" }
+        }
+      },
+      "ReverseRequest": {
+        "type": "object",
+        "required": ["lat", "lng"],
+        "properties": { "lat": { "type": "number" }, "lng": { "type": "number" } }
+      },
+      "ReverseResponse": {
+        "type": "object",
+        "properties": {
+          "formatted": { "type": "string" },
+          "city": { "type": "string" },
+          "state": { "type": "string" },
+          "country": { "type": "string" },
+          "country_code": { "type": "string" },
+          "cache": { "type": "string", "enum": ["hit", "miss"] },
+          "ttl_seconds": { "type": "integer" }
+        }
+      },
+      "UsageResponse": {
+        "type": "object",
+        "properties": {
+          "api_key": { "type": "string" },
+          "period": { "type": "string" },
+          "calls_total": { "type": "integer" },
+          "cache_hits": { "type": "integer" },
+          "cache_misses": { "type": "integer" },
+          "hit_rate": { "type": "number" },
+          "credits_used": { "type": "integer" },
+          "credits_remaining": { "type": "integer" },
+          "plan": { "type": "string" },
+          "estimated_savings_usd": { "type": "number" }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": { "type": "string" },
+          "code": { "type": "string" },
+          "docs": { "type": "string" }
+        }
+      },
+      "HealthResponse": {
+        "type": "object",
+        "properties": {
+          "status": { "type": "string" },
+          "uptime_seconds": { "type": "integer" }
+        }
+      }
+    }
+  },
+  "security": [{ "ApiKeyAuth": [] }],
+  "paths": {
+    "/v1/geocode": {
+      "post": {
+        "summary": "Forward geocode an address",
+        "operationId": "geocode",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/GeocodeRequest" } } } },
+        "responses": {
+          "200": { "description": "Geocode result", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/GeocodeResponse" } } } },
+          "401": { "description": "Missing API key", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "403": { "description": "Invalid API key", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/v1/reverse": {
+      "post": {
+        "summary": "Reverse geocode lat/lng to address",
+        "operationId": "reverseGeocode",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ReverseRequest" } } } },
+        "responses": {
+          "200": { "description": "Reverse geocode result", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ReverseResponse" } } } },
+          "401": { "description": "Missing API key", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "403": { "description": "Invalid API key", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/v1/usage": {
+      "get": {
+        "summary": "Get usage stats for current API key",
+        "operationId": "getUsage",
+        "responses": {
+          "200": { "description": "Usage stats", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UsageResponse" } } } },
+          "401": { "description": "Missing API key", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Health check",
+        "operationId": "healthCheck",
+        "security": [],
+        "responses": {
+          "200": { "description": "Server is healthy", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HealthResponse" } } } }
+        }
+      }
+    }
+  }
+}
